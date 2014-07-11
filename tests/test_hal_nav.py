@@ -40,6 +40,7 @@ def httprettify():
 
 def register_hal(uri='http://www.example.com/',
                  links=None,
+                 embedded=None,
                  state=None,
                  title=None,
                  method='GET',
@@ -52,6 +53,7 @@ def register_hal(uri='http://www.example.com/',
         '''This is either registered for dynamic uris or is called for a
         static uri'''
         _links = links.copy() if links is not None else {}
+        _embedded = embedded.copy() if embedded is not None else {}
         _state = state.copy() if state is not None else {}
         if headers is not None:
             resp_headers = headers.copy()
@@ -65,6 +67,8 @@ def register_hal(uri='http://www.example.com/',
         if title is not None:
             _links['self']['title'] = title
         _state.update({'_links': _links})
+        if _embedded:
+            _state.update({'_embedded': _embedded})
         return status, resp_headers, json.dumps(_state)
 
     httpretty.HTTPretty.register_uri(method=method,
@@ -130,6 +134,23 @@ def test_HALNavigator__links():
                      links={'ht:users': {
                          'href': 'http://www.example.com/users'}}
                      )
+        N = HN.HALNavigator('http://www.example.com')
+        expected = {
+            'ht:users': HN.HALNavigator('http://www.example.com')['ht:users']
+        }
+        assert N.links == expected
+
+
+def test_HALNavigator__embedded():
+    with httprettify():
+        register_hal('http://www.example.com/',
+                     embedded={'ht:users': {
+                         '_links': {
+                             'self': {
+                                 'href': 'http://www.example.com/users'
+                             }
+                         }
+                     }})
         N = HN.HALNavigator('http://www.example.com')
         expected = {
             'ht:users': HN.HALNavigator('http://www.example.com')['ht:users']

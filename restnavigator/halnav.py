@@ -153,6 +153,10 @@ class HALNavigator(object):
         for rel, links in body.get('_links', {}).iteritems():
             if rel not in ('self', 'curies'):
                 self._links[rel] = make_nav(links)
+        for rel, embedded in body.get('_embedded', {}).iteritems():
+            embedded_self = embedded.get('_links', {}).get('self', {})
+            if embedded_self:
+                self._links[rel] = make_nav(embedded_self)
         self.title = body.get('_links', {}).get('self', {}).get(
             'title', self.title)
         if 'curies' in body.get('_links', {}):
